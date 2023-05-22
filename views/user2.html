@@ -70,6 +70,7 @@
      <!-- <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script> -->
      <script src="/socket.io/socket.io.js"></script>
      <script>
+
           var socket = io("http://localhost:8080/");
           var form = document.getElementById('form');
           var input = document.getElementById('input');
@@ -77,8 +78,9 @@
 
           form.addEventListener('submit', function (e) {
                e.preventDefault();
+               let userId = 2;
                if (input.value) {
-                    socket.emit('chat message', input.value);
+                    socket.emit('chat message', { id: userId, message: input.value });
                     input.value = '';
                }
           });

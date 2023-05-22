@@ -26,8 +26,11 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const port = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname + "/views" + "/index.html"));
+app.get("/u1", (req, res) => {
+  res.sendFile(path.join(__dirname + "/views" + "/user1.html"));
+});
+app.get("/u2", (req, res) => {
+  res.sendFile(path.join(__dirname + "/views" + "/user2.html"));
 });
 
 app.get("/set_value", async (req, res) => {
@@ -58,22 +61,32 @@ app.get("/del_value", async (req, res) => {
     res.send("failed to delete");
   }
 });
-
+const connectedUsers = {};
 io.on("connection", (socket) => {
-  console.log("a user connected");
-
+  const socketID = socket.id;
+  console.log("a user connected on socket id ", socketID);
+  connectedUsers[socketID] = socket;
   socket.on("chat message", async (msg) => {
-    let success = await client.set("sad", "shoili");
+    // set cannot be used for object messages
+    // example: {id:userId, message:"some sort of data"}
+    let message = JSON.stringify(msg);
+    let success = await client.set(socketID, message);
     if (success) {
       console.log("message sent to redis: " + msg);
     } else {
       console.log("message sending failed to redis");
     }
     io.emit("emitted message", msg);
+    console.log(msg);
   });
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
+  socket.on("disconnect", async () => {
+    const disconnectedUserSocketId = socketID;
+    console.log("user disconnected on socket id", disconnectedUserSocketId);
+    let redisMsg = await client.get(socketID);
+    redisMsg = JSON.parse(redisMsg);
+    console.log("that user msg on redis is ", redisMsg);
+    
   });
 });
 // should use server not app as server has been configured for socket io
